@@ -86,8 +86,7 @@ namespace null_tgbot
         {
             try
             {
-                
-                await _CallBack.execCallBackAsync(botClient, callbackQuery);
+                 await _CallBack.execCallBackAsync(botClient, callbackQuery);
             }
             catch (Exception ex)
             {
