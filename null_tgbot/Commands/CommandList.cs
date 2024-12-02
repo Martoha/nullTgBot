@@ -1,29 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.ReplyMarkups;
+﻿
 using Telegram.Bot.Types;
 using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
+using null_tgbot.Text;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace null_tgbot.Commands
 {
-    internal class CommandList : ICommandList
-    {
-        public async Task OtherComand(string text, long chatId, string userName, ITelegramBotClient bk, Message message)
-        {
+    public class CommandList : ICommandList
+	{
 
+        public async Task Start(string command, long chatId, string userName, ITelegramBotClient botClient, Message message)
+		{
 
-            await bk.SendTextMessageAsync(chatId, "Я не знаю - " + text);
+            var keyboard = new InlineKeyboardMarkup(new[]
+               {
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("TEST.", callbackData:"Test")
 
+                    },
+                   
+                });
 
+            await botClient.SendMessage(
+                   chatId: chatId,
+                   text: BotMessages.StartMessage,
+                   parseMode: ParseMode.Html,
+                   replyMarkup: keyboard
+               );
         }
 
-        public async Task Start(string commandName, long chatId, string userName, ITelegramBotClient bk, Message message)
-        {
-          
-            Message instructionsMessage = await bk.SendTextMessageAsync(chatId, "Это /start");
-        }
+      
     }
 }

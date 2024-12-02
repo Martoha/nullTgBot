@@ -1,45 +1,51 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+﻿using Handlers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using null_tgbot;
+using null_tgbot.Callbacks;
+using null_tgbot.Commands;
+using null_tgbot.Service;
+using null_tgbot.Services;
 using Telegram.Bot;
-using Telegram.Bot.Polling;
-using Telegram.Bot.Types;
 
-namespace null_tgbot
-{
-    internal class Program
+IHost host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((context, services) =>
     {
-        private static TelegramBotClient? Bot;
+        
+        // Register named HttpClient to benefits from IHttpClientFactory
+        // and consume it with ITelegramBotClient typed client.
+        // More read:
+        //  https://docs.microsoft.com/en-us/aspnet/core/fundamentals/http-requests?view=aspnetcore-5.0#typed-clients
+        //  https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests
+        services.AddHttpClient("telegram_bot_client").RemoveAllLoggers()
+                .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
+                {
+                    //Токен тут
+                    TelegramBotClientOptions options = new("");
+                    return new TelegramBotClient(options, httpClient);
+                });
 
-        public static async Task Main()
-        {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+        services.AddScoped<TgBotApp>();
+        services.AddScoped<ReceiverService>();
 
-          
-
-            TgBotApp app = new();
+        services.AddScoped<ICommandList, CommandList>();
+        services.AddScoped<IOtherComand, OtherCommand>();
 
 
-            //токен тут
-            Bot = new TelegramBotClient("");
+        services.AddScoped<MessageAction>();
+        services.AddScoped<CallbackAction>();
 
-            User me = await Bot.GetMeAsync();
-            Console.Title = me.Username!;
 
-            using CancellationTokenSource? cts = new();
+        #region Команды для CALLBACK
+        services.AddScoped<ICallbackHandler, CallbackAction>();
+        services.AddScoped<ICallbackCommandHandler, TestCallBack>();
+        #endregion
 
-            ReceiverOptions receiverOptions = new() { AllowedUpdates = { } };
-            Bot.StartReceiving(app.HandleUpdateAsync,
-                               app.HandleErrorAsync,
-                               receiverOptions,
-                               cts.Token);
+        services.AddHostedService<PollingService>();
 
-            Console.WriteLine($"Start  @{me.Username}");
+       
 
-            _ = Console.ReadLine();
-            cts.Cancel();
-        }
-    }
-}
+    })
+    .Build();
+
+await host.RunAsync();
